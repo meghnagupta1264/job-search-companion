@@ -1,6 +1,8 @@
 # Job Search Companion
 
-Personal job application tracker. The React/REST foundation and local MongoDB replica set are configured; tracking features and login are not implemented yet.
+Local learning reference: [living architecture](ARCHITECTURE.local.md). This unversioned file is intentionally ignored by Git and is updated alongside architecture changes.
+
+Personal job application tracker. The React/REST foundation and local MongoDB replica set are configured; single-account setup and session login are implemented; application-tracking features come next.
 
 ## Prerequisites
 
@@ -33,11 +35,11 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. The connection card should show `Job Search Companion: UP`.
+Open http://127.0.0.1:5173. On first launch, create your local account, then sign in. The workspace includes a backend connection check.
 Vite proxies `/api` to http://127.0.0.1:8080, so no cross-origin configuration is needed.
 Both development servers bind to localhost. Stop either with Ctrl+C.
 
-`GET /api/health` reports application availability, not database readiness. MongoDB readiness is checked by Compose; the health page remains independent of database availability. All other backend routes require authentication. Account login will be implemented in step 3; CSRF protection remains enabled.
+`GET /api/health` reports application availability, not database readiness. MongoDB readiness is checked by Compose; the health page remains independent of database availability. The CSRF and first-run setup endpoints are public; account setup closes after one owner is created. Other API routes require authentication. CSRF protection applies to login, setup, logout, and other writes.
 
 ## Verify
 
@@ -55,7 +57,7 @@ npm run lint
 - `frontend/src/api`: frontend HTTP functions and response types
 - `frontend/src`: React UI and routing
 
-The frontend build currently outputs to `frontend/dist`; serving it through Spring Boot will be configured in the packaging stage. Account login and CSV import are not configured yet.
+The frontend build currently outputs to `frontend/dist`; serving it through Spring Boot will be configured in the packaging stage. CSV import is not implemented yet.
 
 ## MongoDB (local development)
 
@@ -84,3 +86,34 @@ docker compose up -d --wait
 ```
 
 Avoid `docker compose down -v`: it deletes the persistent database volume. Database files are inside Colima's virtual disk, not the source directory. Colima/VM deletion can also remove them; backup and restore tooling will be added in the daily-use stage.
+
+## Account and session login
+
+1. Start MongoDB, Spring Boot, and Vite using the commands above.
+2. Open `http://127.0.0.1:5173` consistently (avoid switching between localhost and 127.0.0.1, which use different cookies).
+3. Choose a username (3–40 letters, numbers, dots, underscores, or hyphens), a password of at least 12 characters and at most 72 UTF-8 bytes, and a timezone such as `Asia/Kolkata`.
+4. After account creation, sign in with those credentials. Usernames are case-insensitive; passwords are case-sensitive.
+5. Refresh the page to restore the session, or use **Sign out** to invalidate it.
+
+No default password is generated and no password needs to be entered in source files or environment variables. The `users` collection stores a BCrypt hash with a random salt (cost 12), the username, timezone, and creation time. Its fixed `owner` ID prevents a second account even if setup requests race. There is no public registration or password-reset flow in this version.
+
+Sessions are stored in backend memory and expire after 30 minutes of inactivity. Restarting the backend signs you out; your account remains in MongoDB. The session cookie is HttpOnly and SameSite=Lax. Secure cookies are disabled only for local HTTP; enable them when deploying with HTTPS. Never expose the first-run setup endpoint to a network without a provisioning mechanism.
+
+### Authentication API
+
+| Method | Endpoint | Behavior |
+| --- | --- | --- |
+| GET | `/api/csrf` | Returns a session-bound token and its header name |
+| GET | `/api/session/setup-status` | Indicates whether the one-time setup is available |
+| POST | `/api/session/setup` | Accepts username, password, and timezone as JSON; returns 201 |
+| POST | `/api/session/login` | Accepts form-encoded username/password; sets session cookie; returns 204 |
+| GET | `/api/session` | Returns owner ID, username, and timezone; anonymous requests get 401 |
+| POST | `/api/session/logout` | Invalidates the session and deletes its cookie; returns 204 |
+
+The frontend requests a fresh CSRF token before each write because login and logout rotate it. Tokens and credentials are not stored in localStorage. All requests go through Vite's same-origin proxy. Authentication/filter and validation errors share `{ code, message, fieldErrors }` responses.
+
+Future application/action services must use `CurrentAccount.id()` when querying and saving records, rather than trusting a browser-supplied owner ID. Those domain endpoints are not implemented yet.
+
+### Login verification
+
+`./mvnw verify` exercises real Spring Security filters with mocked account storage: successful/failed login, CSRF rejection and rotation, session restoration, logout, validation, and closed setup. `./mvnw verify -Pmongo-integration` additionally verifies password persistence and the unique owner constraint using the isolated `job_search_companion_auth_it` database. It never creates a test account in your actual application database.

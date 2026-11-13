@@ -1,3 +1,8 @@
+/* Shared spacing keeps login and the future tracker readable on small screens. */
 :root { font-family: system-ui, sans-serif; }
 body { margin: 0; min-width: 320px; background: #f4f6f8; color: #172337; }
 .companion-panel { max-width: 720px; }
+.auth-panel { max-width: 500px; }
+.eyebrow { color: #58677a; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 650; }
+/* Visible focus helps keyboard users move through account forms. */
+.form-control:focus { border-color: #526d8f; box-shadow: 0 0 0 .2rem rgb(82 109 143 / 20%); }

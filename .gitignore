@@ -38,3 +38,6 @@ frontend/dist/
 *.tsbuildinfo
 .env
 .env.local
+
+# Living architecture notes stay local and are updated as implementation changes.
+/ARCHITECTURE.local.md
