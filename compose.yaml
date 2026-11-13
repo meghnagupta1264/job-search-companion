@@ -1,0 +1,37 @@
+# Local development only: MongoDB is exposed on the laptop loopback interface.
+name: job-search-companion
+services:
+  mongodb:
+    image: mongo:8.0.17
+    # Transactions require a replica set, even when there is only one member.
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      # A named volume keeps records when the container is recreated.
+      - mongodb-data:/data/db
+    healthcheck:
+      # A successful ping alone does not mean transactions are ready.
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.hello().isWritablePrimary ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  mongodb-init:
+    image: mongo:8.0.17
+    # Share MongoDB's network so the advertised localhost address works both
+    # inside MongoDB and from Spring Boot/Compass running on the laptop.
+    network_mode: "service:mongodb"
+    depends_on:
+      mongodb:
+        condition: service_started
+    volumes:
+      - ./infra/mongodb/init-replica-set.js:/setup/init-replica-set.js:ro
+    # --nodb lets our retry loop handle startup instead of mongosh connecting early.
+    entrypoint: ["mongosh", "--nodb", "--quiet", "--file", "/setup/init-replica-set.js"]
+    restart: "no"
+
+volumes:
+  mongodb-data:

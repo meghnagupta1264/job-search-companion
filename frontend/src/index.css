@@ -1,0 +1,3 @@
+:root { font-family: system-ui, sans-serif; }
+body { margin: 0; min-width: 320px; background: #f4f6f8; color: #172337; }
+.companion-panel { max-width: 720px; }
