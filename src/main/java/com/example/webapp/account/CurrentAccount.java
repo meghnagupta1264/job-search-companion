@@ -8,10 +8,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class CurrentAccount {
     public String id() {
+        return principal().accountId();
+    }
+
+    // Calendar dates and local interview times use the trusted account timezone.
+    public java.time.ZoneId timezone() { return java.time.ZoneId.of(principal().timezone()); }
+
+    private AccountPrincipal principal() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof AccountPrincipal principal)) {
             throw new AccessDeniedException("Sign in to continue.");
         }
-        return principal.accountId();
+        return principal;
     }
 }

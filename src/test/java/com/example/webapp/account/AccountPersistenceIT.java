@@ -10,7 +10,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Verify real MongoDB persistence and its single-owner constraint in an isolated DB. */
 @SpringBootTest(properties = "spring.mongodb.uri=mongodb://localhost:27017/job_search_companion_auth_it?replicaSet=rs0&serverSelectionTimeoutMS=5000")
-class AccountPersistenceIT {
+// Shared lifecycle drops only the explicitly approved isolated database after this class.
+class AccountPersistenceIT extends com.example.webapp.support.IsolatedMongoIntegrationTest {
     @Autowired AccountRepository accounts;
     @Autowired AccountService service;
     @Autowired PasswordEncoder passwords;

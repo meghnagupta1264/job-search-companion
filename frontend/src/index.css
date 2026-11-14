@@ -6,3 +6,30 @@ body { margin: 0; min-width: 320px; background: #f4f6f8; color: #172337; }
 .eyebrow { color: #58677a; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 650; }
 /* Visible focus helps keyboard users move through account forms. */
 .form-control:focus { border-color: #526d8f; box-shadow: 0 0 0 .2rem rgb(82 109 143 / 20%); }
+
+/* Feature content stays readable while long company names and descriptions wrap. */
+.form-panel, .detail-panel { max-width: 840px; }
+.description-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.application-table th { font-size: .75rem; color: #58677a; font-weight: 600; background: #f9fafb; }
+.application-table td, .application-table th { padding: 1.1rem; vertical-align: middle; }
+.application-table td:first-child { min-width: 210px; overflow-wrap: anywhere; max-width: 400px; }
+.application-table td:last-child { text-align: right; }
+.status-badge { display: inline-block; border-radius: 2rem; padding: .35rem .7rem; font-size: .75rem; font-weight: 600; white-space: nowrap; background: #edf0f5; color: #4e5c71; }
+.status-applied { background: #e8efff; color: #274e8e; }
+.status-interviewing { background: #fff0dc; color: #87530b; }
+.status-offer, .status-accepted { background: #e3f2e9; color: #246345; }
+.status-rejected, .status-withdrawn { background: #f2e9ed; color: #7a4b5e; }
+
+/* Board overflow stays inside its own horizontal scroller, not the whole page. */
+.kanban-board { display: flex; gap: 1rem; overflow-x: auto; padding: .25rem .1rem 1rem; align-items: stretch; }
+/* Each column scrolls vertically so a long Saved column cannot bury other drop targets. */
+.kanban-column { flex: 0 0 285px; background: #e9edf2; border: 2px solid transparent; border-radius: .6rem; padding: 1rem; min-height: 220px; max-height: 72vh; overflow-y: auto; }
+.kanban-column.drop-active { border-color: #526d8f; background: #dfe8f4; }
+.kanban-card[draggable="true"] { cursor: grab; }
+.kanban-card a, .kanban-card select { cursor: pointer; }
+.status-dialog { width: min(480px, calc(100% - 2rem)); max-height: 90vh; overflow-y: auto; border: 0; border-radius: .75rem; padding: 1.5rem; box-shadow: 0 1rem 4rem #0004; }
+.status-dialog::backdrop { background: #17233788; }
+/* A simple ordered list keeps notes readable and accessible without decorative icons. */
+.timeline-list { list-style: none; padding: 0; }
+.timeline-entry { border-left: 2px solid #dce2e9; padding: .25rem 0 1.5rem 1rem; overflow-wrap: anywhere; }
+.timeline-entry:last-child { padding-bottom: .25rem; }

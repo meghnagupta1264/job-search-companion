@@ -2,7 +2,7 @@
 
 Local learning reference: [living architecture](ARCHITECTURE.local.md). This unversioned file is intentionally ignored by Git and is updated alongside architecture changes.
 
-Personal job application tracker. The React/REST foundation and local MongoDB replica set are configured; single-account setup and session login are implemented; application-tracking features come next.
+Personal job application tracker. The React/REST foundation and local MongoDB replica set are configured; single-account setup, session login, and basic application tracking are implemented.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. On first launch, create your local account, then sign in. The workspace includes a backend connection check.
+Open http://127.0.0.1:5173. On first launch, create your local account, then sign in. After login, the Applications workspace lets you add, view, edit, search, filter, and sort jobs.
 Vite proxies `/api` to http://127.0.0.1:8080, so no cross-origin configuration is needed.
 Both development servers bind to localhost. Stop either with Ctrl+C.
 
@@ -117,3 +117,82 @@ Future application/action services must use `CurrentAccount.id()` when querying 
 ### Login verification
 
 `./mvnw verify` exercises real Spring Security filters with mocked account storage: successful/failed login, CSRF rejection and rotation, session restoration, logout, validation, and closed setup. `./mvnw verify -Pmongo-integration` additionally verifies password persistence and the unique owner constraint using the isolated `job_search_companion_auth_it` database. It never creates a test account in your actual application database.
+
+## Application tracking
+
+After signing in, open `/applications`. Save a role with company, role, posting URL, source, location, description, status, and an optional application date. A date is required for any status other than Saved. Source names are free text with suggestions, so job platforms do not need hardcoded backend enums.
+
+The list supports literal case-insensitive search across company, role, and location; status/source filters; six sort fields; ascending/descending order; and page sizes of 10, 20, or 50. Filter state lives in the URL so refresh and browser navigation preserve it. Open a company name for details or use Edit to change a record.
+
+Editable fields are submitted together. Edits include the last-read version: an older tab receives a 409 conflict instead of overwriting newer changes. The form offers an explicit reload that discards stale edits. Dates remain calendar dates; detail timestamps use the account timezone. Job descriptions are plain text and are never rendered as HTML.
+
+### Application API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/applications` | Owner-scoped list; query parameters: search, status, source, page, size, sort, direction |
+| GET | `/api/applications/sources` | Source values used by the current owner |
+| POST | `/api/applications` | Create from a full application form; returns 201 with a DTO and Location header |
+| GET | `/api/applications/{id}` | Read one owned application |
+| PATCH | `/api/applications/{id}` | Replace editable form fields with an optimistic version check; returns the updated DTO |
+
+All endpoints require login; POST/PATCH also require CSRF. The server derives `userId`, timestamps, and IDs rather than trusting browser input. A missing or foreign-owned application returns the same 404. Limits: company/role/location 160 characters, source 80, posting URL 2,048, description 30,000, search 120, page size at most 50. Posting URLs must be HTTP(S) without embedded credentials.
+
+MongoDB's `applications` collection has owner/update, owner/status/update, and owner/source/update indexes, created on first list/create/source access. Text search uses escaped literal regexes, suited to this personal dataset; large-scale full-text search is not configured.
+
+Run `./mvnw verify -Pmongo-integration` to additionally check the application API, ownership isolation, filtering, pagination, validation, indexes, CSRF, and stale/concurrent edits in `job_search_companion_applications_it`. No personal application records are used by those checks. Status history and notes are implemented in the next section. Follow-ups, deletion, and CSV import remain outside this stage.
+
+## Notes, history, and board view
+
+Use the **List / Board** toggle on Applications. The choice is stored in the URL as `view=board` and shares search, source/status filters, and ordering with the list. The board loads 20 cards per status column, with a total count and **Load more**; it does not silently show only the list's current page. Drag a card to another column on desktop, or use **Move to** on a card for touch/keyboard operation. Card order follows the chosen sort, not a manual ranking.
+
+When a saved job has no application date, moving it to another status opens a date prompt. Cancelling leaves the record unchanged. Existing dates are preserved by board moves; use Edit to change dates. Version conflicts show an error and a reload option. Moving to the same status is a no-op.
+
+Application details include **Notes & history**. Add plain-text notes up to 10,000 characters. The newest-first timeline combines notes, creation events, and status transitions with timestamps in your account timezone. **Load older activity** retrieves more history. Notes are append-only and do not change the application's version. This version does not support editing or deleting notes.
+
+Creation and every actual status change (from either Edit or Board) record an immutable event in the `activities` collection. Application and event writes share a MongoDB transaction; history failure rolls back the application write. Collections/indexes are prepared before opening the transaction. Old records are not backfilled with guessed history; they start recording events from this release onward.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/applications/{id}/activities?page=0&size=20` | Owner-scoped timeline, newest first, at most 50 items per page |
+| POST | `/api/applications/{id}/notes` | JSON `{ content }`; append a note and return 201 JSON |
+| PATCH | `/api/applications/{id}/status` | JSON `{ status, version, appliedOn? }`; atomically update status and history |
+
+Authentication and CSRF protect the new writes. Foreign-owned records still return 404. The compound `owner_application_timeline` index covers owner, application ID, timestamp, and event ID. Run `./mvnw verify -Pmongo-integration` for real transaction rollback, version/date/no-op, timeline, note validation, pagination, and ownership checks in `job_search_companion_activity_it`.
+
+## Keeping MongoDB Compass tidy after tests
+
+Integration test classes now check that they are connected to an exact approved test database before running fixtures, then drop that complete database after the class finishes (including normal test failures). This removes leftover empty collections and indexes as well as records. The personal `job_search_companion` database is never an approved cleanup target. A crashed or forcibly stopped JVM can still leave test databases behind.
+
+After tests/browser checks have stopped, remove known leftovers with:
+
+```sh
+# Exact-name cleanup for the project's known integration and browser-test databases.
+docker compose exec -T mongodb mongosh --nodb --quiet --file /dev/stdin < scripts/cleanup-test-databases.js
+```
+
+The script uses a fixed list rather than a broad name-prefix match. Future browser checks should invoke it after stopping their test servers. MongoDB's admin/config/local databases are normal system databases and remain present. Refresh Compass after cleanup.
+
+## Actions, follow-ups, and interviews
+
+Open an application and use **Actions & interviews → Add action**. Types are Follow-up, Interview, Preparation, Assignment, and Other. A title and due date are required; details are optional (up to 10,000 characters). Interviews can include an exact time on the due date in the account timezone. The backend converts that local time to a UTC instant; the browser's own timezone is not used to interpret your entry. Nonexistent/ambiguous daylight-saving times are rejected instead of silently shifted.
+
+Pending actions can be edited/rescheduled, completed, or cancelled. Completed/cancelled records remain readable and cannot be edited or completed again. Views filter Pending, Completed, Cancelled, or All, load 20 at a time, and sort by due date/time. An Overdue badge means a pending due date is before today in the account timezone. Completing a follow-up never creates another; the next follow-up must be added manually.
+
+Moving an application to Accepted, Rejected, or Withdrawn (through Board or Edit) cancels all its pending actions, preserves completed actions, and records cancellation reasons. This happens in the same MongoDB transaction as the application status/history changes. Reopening allows new actions but does not revive cancelled ones. Closed applications reject new actions and completion of pending work.
+
+The `actions` collection lives inside the existing `job_search_companion` database. It has owner/application/status/due and owner/status/due indexes for detail views and the future Today dashboard. Action history stores before/after snapshots so rescheduling does not rewrite earlier events. Each action has its own optimistic version. Action writes also advance the parent application's version and updatedAt; this prevents a racing action write from committing after application closure. An open application edit may consequently require reload after an action changes elsewhere. Notes still do not advance the parent version.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/applications/{id}/actions` | Owner-scoped actions; optional status, page, size (max 50) |
+| GET | `/api/actions` | Same owner-scoped list across applications, for future dashboard work |
+| GET | `/api/actions/{id}` | One owned action |
+| POST | `/api/applications/{id}/actions` | Create pending action; returns 201 DTO |
+| PATCH | `/api/actions/{id}` | Full editable fields and current version |
+| POST | `/api/actions/{id}/complete` | JSON `{ version }`; complete a pending action |
+| POST | `/api/actions/{id}/cancel` | JSON `{ version }`; cancel a pending action |
+
+Create/edit JSON fields: title, type, dueOn (YYYY-MM-DD), scheduledTime (optional HH:mm, interviews only), details, and version (required for editing). Ownership, status, audit timestamps, and completion/cancellation timestamps are server-assigned. Writes require login and CSRF. Conflict responses offer reload instead of silently overwriting another edit. The Today dashboard and notifications are not implemented in this stage.
+
+Action integration tests use `job_search_companion_actions_it`, which is removed after the test class. `scripts/cleanup-test-databases.js` also knows this exact name and the isolated step-6 browser database.

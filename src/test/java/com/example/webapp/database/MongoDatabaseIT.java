@@ -13,7 +13,8 @@ import static org.junit.jupiter.api.Assertions.*;
 // Opt-in integration test: ./mvnw verify -Pmongo-integration
 // A separate database prevents verification from touching personal application records.
 @SpringBootTest(properties = "spring.mongodb.uri=mongodb://localhost:27017/job_search_companion_it?replicaSet=rs0&serverSelectionTimeoutMS=5000")
-class MongoDatabaseIT {
+// Shared lifecycle drops only the explicitly approved isolated database after this class.
+class MongoDatabaseIT extends com.example.webapp.support.IsolatedMongoIntegrationTest {
     @Autowired MongoTemplate mongo;
     @Autowired PlatformTransactionManager transactionManager;
 

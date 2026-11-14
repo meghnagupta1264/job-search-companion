@@ -28,16 +28,18 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
     throw new ApiError(response.status, body?.code ?? 'REQUEST_FAILED',
       body?.message ?? 'Something went wrong. Please try again.', body?.fieldErrors ?? {})
   }
-  // Login, logout, and setup intentionally return no JSON body.
-  return response.status === 204 || response.status === 201 ? undefined as T : response.json()
+  // Setup returns an empty 201, while creating an application returns a 201 DTO.
+  // Parse based on the body rather than treating all creation responses as empty.
+  const text = await response.text()
+  return text ? JSON.parse(text) as T : undefined as T
 }
 
-export async function write<T>(path: string, body: BodyInit, contentType: string): Promise<T> {
+export async function write<T>(path: string, body: BodyInit, contentType: string, method: 'POST' | 'PATCH' = 'POST'): Promise<T> {
   // Login and logout rotate CSRF tokens. Fetch one immediately before each write;
   // never persist tokens or passwords in localStorage, and never auto-retry a POST.
   const csrf = await request<{ headerName: string; token: string }>('/api/csrf')
   return request<T>(path, {
-    method: 'POST', body,
+    method, body,
     headers: { 'Content-Type': contentType, [csrf.headerName]: csrf.token },
   })
 }
