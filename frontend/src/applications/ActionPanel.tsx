@@ -23,7 +23,7 @@ export function ActionPanel({ app, timezone }: { app: JobApplication; timezone: 
     // Action writes also advance the parent version and can reorder the board/list.
     await Promise.all([
       client.invalidateQueries({ queryKey: ['actions', app.id] }),
-      client.invalidateQueries({ queryKey: ['dashboard'] }),
+      client.invalidateQueries({ queryKey: ['actions', 'calendar'] }), client.invalidateQueries({ queryKey: ['actions', 'search'] }), client.invalidateQueries({ queryKey: ['dashboard'] }),
       client.invalidateQueries({ queryKey: ['activities', app.id] }),
       client.invalidateQueries({ queryKey: ['application', app.id] }),
       client.invalidateQueries({ queryKey: ['applications'] }),

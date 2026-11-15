@@ -50,6 +50,14 @@ public class ApplicationStore {
         return mongo.find(Query.query(Criteria.where("userId").is(userId).and("_id").in(ids)), JobApplication.class);
     }
 
+    /** Match company/role literally for the cross-application action search. */
+    public List<String> matchingActionParents(String userId, String search) {
+        var literal = Pattern.quote(search);
+        var criteria = Criteria.where("userId").is(userId).orOperator(
+                Criteria.where("company").regex(literal, "i"), Criteria.where("role").regex(literal, "i"));
+        return mongo.find(Query.query(criteria), JobApplication.class).stream().map(JobApplication::id).toList();
+    }
+
     public SearchResult search(String userId, String search, ApplicationStatus status, String source,
                                int page, int size, String sort, Sort.Direction direction) {
         prepareIndexes();

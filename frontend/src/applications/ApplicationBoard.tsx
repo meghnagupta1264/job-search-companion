@@ -19,7 +19,7 @@ export function ApplicationBoard({ params }: { params: URLSearchParams }) {
       setMessage(app.company + ' moved to ' + statusLabel(app.status) + '.')
       client.setQueryData(['application', app.id], app)
       await Promise.all([
-        client.invalidateQueries({ queryKey: ['dashboard'] }), client.invalidateQueries({ queryKey: ['applications'] }),
+        client.invalidateQueries({ queryKey: ['actions', 'calendar'] }), client.invalidateQueries({ queryKey: ['actions', 'search'] }), client.invalidateQueries({ queryKey: ['dashboard'] }), client.invalidateQueries({ queryKey: ['applications'] }),
         client.invalidateQueries({ queryKey: ['application-board'] }),
         client.invalidateQueries({ queryKey: ['activities', app.id] }), client.invalidateQueries({ queryKey: ['actions', app.id] }),
       ])

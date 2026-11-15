@@ -25,8 +25,10 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
     if (response.status === 401 && path !== '/api/session' && path !== '/api/session/login') {
       window.dispatchEvent(new Event('session-expired'))
     }
-    throw new ApiError(response.status, body?.code ?? 'REQUEST_FAILED',
-      body?.message ?? 'Something went wrong. Please try again.', body?.fieldErrors ?? {})
+    // A stopped backend produces a proxy response without our JSON error contract.
+    const backendUnavailable = !body?.message && [500, 502, 503, 504].includes(response.status)
+    throw new ApiError(response.status, body?.code ?? (backendUnavailable ? 'BACKEND_UNAVAILABLE' : 'REQUEST_FAILED'),
+      body?.message ?? (backendUnavailable ? 'Cannot reach the backend. Start WebAppApplication in IntelliJ, then try again.' : 'Something went wrong. Please try again.'), body?.fieldErrors ?? {})
   }
   // Setup returns an empty 201, while creating an application returns a 201 DTO.
   // Parse based on the body rather than treating all creation responses as empty.

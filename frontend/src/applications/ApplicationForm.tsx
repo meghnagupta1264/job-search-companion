@@ -28,7 +28,7 @@ function ApplicationForm({ initial, reload }: { initial?: JobApplication; reload
       // Refresh list/source caches and make the detail response available immediately.
       client.setQueryData(['application', app.id], app)
       // Form status changes must refresh the same board and history as drag/drop moves.
-      await Promise.all([client.invalidateQueries({ queryKey: ['dashboard'] }), client.invalidateQueries({ queryKey: ['applications'] }), client.invalidateQueries({ queryKey: ['application-sources'] }), client.invalidateQueries({ queryKey: ['application-board'] }), client.invalidateQueries({ queryKey: ['activities', app.id] }), client.invalidateQueries({ queryKey: ['actions', app.id] })])
+      await Promise.all([client.invalidateQueries({ queryKey: ['actions', 'calendar'] }), client.invalidateQueries({ queryKey: ['actions', 'search'] }), client.invalidateQueries({ queryKey: ['dashboard'] }), client.invalidateQueries({ queryKey: ['applications'] }), client.invalidateQueries({ queryKey: ['application-sources'] }), client.invalidateQueries({ queryKey: ['application-board'] }), client.invalidateQueries({ queryKey: ['activities', app.id] }), client.invalidateQueries({ queryKey: ['actions', app.id] })])
       navigate('/applications/' + app.id, { replace: true })
     },
   })

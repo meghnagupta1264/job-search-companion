@@ -25,3 +25,9 @@ export function finishAction(action: JobAction, cancel: boolean) {
 export function actionTypeLabel(type: ActionType) {
   return ({ FOLLOW_UP: 'Follow-up', INTERVIEW: 'Interview', PREPARATION: 'Preparation', ASSIGNMENT: 'Assignment', OTHER: 'Other' })[type]
 }
+
+// Cross-application search includes parent labels while preserving existing action DTOs.
+export interface ActionSearchPage { items: { action: JobAction; company: string; role: string }[]; page: number; size: number; totalElements: number; totalPages: number }
+export function searchActions(params: URLSearchParams) {
+  return request<ActionSearchPage>('/api/actions/search?' + params)
+}

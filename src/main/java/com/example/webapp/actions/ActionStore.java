@@ -54,5 +54,25 @@ public class ActionStore {
                 .skip((long) page * size).limit(size);
         return new Result(mongo.find(query, JobAction.class), total);
     }
+    /** Inclusive calendar-date filters; search is scoped before counting and paging. */
+    public Result search(String owner, JobAction.Status status, JobAction.Type type, java.time.LocalDate from,
+                         java.time.LocalDate to, String search, List<String> parentIds, int page, int size) {
+        prepareIndexes();
+        var criteria = Criteria.where("userId").is(owner);
+        if (status != null) criteria.and("status").is(status);
+        if (type != null) criteria.and("type").is(type);
+        if (from != null || to != null) {
+            var dates = criteria.and("dueOn");
+            if (from != null) dates.gte(from);
+            if (to != null) dates.lte(to);
+        }
+        if (!search.isBlank()) criteria.orOperator(
+                Criteria.where("title").regex(java.util.regex.Pattern.quote(search), "i"),
+                Criteria.where("applicationId").in(parentIds));
+        long total = mongo.count(Query.query(criteria), JobAction.class);
+        var query = Query.query(criteria).with(Sort.by(Sort.Direction.ASC, "dueOn", "scheduledAt", "_id"))
+                .skip((long) page * size).limit(size);
+        return new Result(mongo.find(query, JobAction.class), total);
+    }
     public record Result(List<JobAction> items, long total) {}
 }

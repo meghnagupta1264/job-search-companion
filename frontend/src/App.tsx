@@ -1,3 +1,5 @@
+import { WeeklyCalendar } from './applications/WeeklyCalendar'
+import { AllActions } from './applications/AllActions'
 import { TodayDashboard } from './applications/TodayDashboard'
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -29,6 +31,8 @@ function Workspace({ session }: { session: Session }) {
       <nav className="workspace-nav" aria-label="Main navigation">
         <NavLink to="/today"><span aria-hidden="true">◈</span> Today</NavLink>
         <NavLink to="/applications"><span aria-hidden="true">▤</span> Applications</NavLink>
+        <NavLink to="/actions"><span aria-hidden="true">✓</span> All actions</NavLink>
+        <NavLink to="/calendar"><span aria-hidden="true">▦</span> Calendar</NavLink>
       </nav>
       <div className="sidebar-note"><span className="sidebar-flourish" aria-hidden="true">Every next step</span><p>A little clarity for<br />your next chapter.</p></div>
       <div className="sidebar-account"><span className="account-label">Signed in as</span><span className="text-break">{session.username}</span><button className="sidebar-signout" disabled={signOut.isPending} onClick={() => signOut.mutate()}>{signOut.isPending ? 'Signing out…' : 'Sign out ↗'}</button></div>
@@ -68,6 +72,8 @@ export default function App() {
     <Route element={<Workspace session={session.data} />}>
       <Route path="/" element={<Navigate to="/today" replace />} />
       {/* Today is the signed-in landing page; application views remain directly accessible. */}
+      <Route path="/calendar" element={<WeeklyCalendar />} />
+      <Route path="/actions" element={<AllActions />} />
       <Route path="/today" element={<TodayDashboard />} />
       <Route path="/applications" element={<ApplicationList />} />
       <Route path="/applications/new" element={<ApplicationFormPage />} />

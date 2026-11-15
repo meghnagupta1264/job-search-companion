@@ -212,3 +212,29 @@ Each section shows company, role, action type and schedule, with **Complete**, *
 ## Visual theme
 
 The interface uses a forest-green sidebar, warm ivory canvas, muted gold accents and rounded white cards. Desktop navigation becomes a compact header on mobile. Local font stacks provide sans-serif body text and serif heading accents without external font downloads. The theme covers login/setup, Today, list/board, application forms/details, actions and timeline; existing features and APIs are unchanged.
+
+## All Actions
+
+Open **All actions** in navigation (`/actions`) to plan across every application, including dates beyond the Today dashboard. Defaults: Pending, no date restrictions, earliest due first. Search matches action title, company or role literally and case-insensitively. Combine type/status filters with inclusive **Due from / Due through** dates. Choose All statuses to review completed/cancelled work. Filters and pagination remain in the URL; page sizes are 10, 20 or 50.
+
+Pending actions support Complete, Edit/reschedule and Cancel; terminal actions are read-only. Open application leads to details/history and manual action creation. Changes refresh related views, and stale edits offer reload. Completing an action never creates a new follow-up.
+
+`GET /api/actions/search` accepts optional status, type, from, to, search (max 120 characters), page and size (max 50). Results include action DTO plus company/role and pagination totals. Date bounds are inclusive calendar dates; interviews still display in the account timezone. The existing `/api/actions` contract is unchanged.
+
+## Weekly calendar
+
+Open **Calendar** (`/calendar`) for a Monday–Sunday schedule. Use Previous week, This week or Next week; a `week=YYYY-MM-DD` URL opens the containing week and survives refresh. Pending actions are shown by default; All statuses includes completed/cancelled history as read-only.
+
+Each day separates **Date-only actions** (including interviews without a time) from **Scheduled interviews**, ordered by account-local time. Times and today's highlight follow the account timezone, even if your browser uses a different timezone. All seven days, including weekends, are shown. Complete, reschedule or open an application's details from a card; new actions are still created manually within applications. Mobile shows a vertical daily agenda; desktop has an internally scrolling weekly grid.
+
+The calendar reuses `/api/actions/search` with inclusive week dates and retrieves every result page. It refreshes every minute/on focus and shares action-cache invalidation with the other screens. No new backend endpoints, collections or dependencies are needed. This is an in-app schedule, without external calendar synchronization or automatic reminders.
+
+The calendar now uses a familiar weekly time grid: weekday headers, a separate all-day row, and timed interview blocks on hourly lines. Click a block for details, completion or rescheduling. Overlapping blocks appear side by side; mobile scrolls within the grid. The full 24-hour range is available. Interview duration is not yet stored, so blocks mark start times rather than measured meeting lengths.
+
+### Application milestones on the calendar
+
+The all-day row also shows **Applied — company** on the application's recorded application date and **Interviewed — company** on each completed interview action's scheduled date. Wednesday's application remains visible after Friday's interview; later status changes don't replace these cards. Pending/cancelled interviews do not count as interviewed. Interviewing status alone does not establish that an interview occurred.
+
+Recorded offers, acceptance, rejection and withdrawal appear on their history-event date in the account timezone. Milestones stay visible independently of the **Show actions** status filter; click one to open application details. In All statuses, a completed interview can have both its timed action block and an all-day Interviewed milestone. Applied dates follow corrections to the application record; history events use immutable snapshots. Older records can show Applied if an application date is known, but interview/status history isn't invented.
+
+`GET /api/calendar/milestones?from=YYYY-MM-DD&to=YYYY-MM-DD` returns owner-scoped milestone cards for an inclusive range of up to seven days. It reads existing applications and activity history; no new collection is created.

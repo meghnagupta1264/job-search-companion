@@ -18,6 +18,15 @@ public class ActionController {
     @GetMapping("/actions")
     public ActionService.Page all(@RequestParam(required=false)JobAction.Status status,
             @RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size){return service.list(null,status,page,size);}
+    // Keep the original /actions list DTO compatible with existing callers.
+    @GetMapping("/actions/search")
+    public ActionService.SearchPage search(@RequestParam(required=false) JobAction.Status status,
+            @RequestParam(required=false) JobAction.Type type,
+            @RequestParam(required=false) java.time.LocalDate from, @RequestParam(required=false) java.time.LocalDate to,
+            @RequestParam(defaultValue="") String search, @RequestParam(defaultValue="0") int page,
+            @RequestParam(defaultValue="20") int size) {
+        return service.search(status, type, from, to, search, page, size);
+    }
     // Separate route keeps the existing per-action and list contracts unchanged.
     @GetMapping("/dashboard/actions")
     public ActionService.AgendaPage agenda(@RequestParam ActionService.AgendaSection section,

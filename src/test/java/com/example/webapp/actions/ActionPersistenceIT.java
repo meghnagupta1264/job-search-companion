@@ -59,6 +59,76 @@ class ActionPersistenceIT extends IsolatedMongoIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test void calendarKeepsAppliedAndInterviewedOnTheirOwnDates() throws Exception {
+        var app = app();
+        // Wednesday application and Friday interview must coexist even after status changes.
+        var applied = LocalDate.of(2027, 2, 17); var interviewDate = applied.plusDays(2);
+        mvc.perform(patch("/api/applications/"+app.id()+"/status").with(owner("alice")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(new StatusRequest(ApplicationStatus.APPLIED,parent(app.id()).version(),applied))))
+                .andExpect(status().isOk());
+        var interview=create(app.id(),input("Mastercard interview",JobAction.Type.INTERVIEW,interviewDate,"14:30",null));
+        String url="/api/calendar/milestones?from=2027-02-15&to=2027-02-21";
+        mvc.perform(get(url).with(owner("alice"))).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].label").value("Applied")).andExpect(jsonPath("$[0].date").value("2027-02-17"));
+        mvc.perform(post("/api/actions/"+interview.id()+"/complete").with(owner("alice")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(new ActionController.VersionRequest(interview.version())))).andExpect(status().isOk());
+        terminal(app.id(),ApplicationStatus.REJECTED);
+        mvc.perform(get(url).with(owner("alice"))).andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].label").value("Applied")).andExpect(jsonPath("$[0].date").value("2027-02-17"))
+                .andExpect(jsonPath("$[1].label").value("Interviewed")).andExpect(jsonPath("$[1].date").value("2027-02-19"))
+                .andExpect(jsonPath("$[1].company").value("Acme")).andExpect(jsonPath("$[1].userId").doesNotExist());
+        mvc.perform(get(url).with(owner("bob"))).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get(url)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/calendar/milestones?from=2027-02-21&to=2027-02-15").with(owner("alice"))).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/calendar/milestones?from=2027-02-15&to=2027-02-22").with(owner("alice"))).andExpect(status().isBadRequest());
+    }
+
+    @Test void calendarExcludesSavedCancelledAndIncompleteInterviewsAndConvertsOutcomeTimezone() throws Exception {
+        var app=app();
+        var interview=create(app.id(),input("Cancelled interview",JobAction.Type.INTERVIEW,LocalDate.of(2027,2,19),"",null));
+        mvc.perform(post("/api/actions/"+interview.id()+"/cancel").with(owner("alice")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(new ActionController.VersionRequest(interview.version())))).andExpect(status().isOk());
+        create(app.id(),input("Upcoming interview",JobAction.Type.INTERVIEW,LocalDate.of(2027,2,19),"",null));
+        mongo.insert(new Activity(null,"alice",app.id(),Activity.Type.STATUS_CHANGED,"",ApplicationStatus.INTERVIEWING,
+                ApplicationStatus.OFFER,Instant.parse("2027-02-21T20:00:00Z")));
+        mvc.perform(get("/api/calendar/milestones?from=2027-02-15&to=2027-02-21").with(owner("alice")))
+                .andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/calendar/milestones?from=2027-02-22&to=2027-02-28").with(owner("alice")))
+                .andExpect(jsonPath("$.length()").value(1)).andExpect(jsonPath("$[0].label").value("Offer received"))
+                .andExpect(jsonPath("$[0].date").value("2027-02-22"));
+    }
+
+    @Test void allActionsCombinesLiteralSearchTypeStatusAndInclusiveDates() throws Exception {
+        var app = app(); var due = LocalDate.of(2027, 2, 15);
+        var match = create(app.id(), input("Prepare [java]", JobAction.Type.INTERVIEW, due, "14:30", null));
+        create(app.id(), input("Other task", JobAction.Type.OTHER, due.plusDays(1), "", null));
+        String base = "/api/actions/search?status=PENDING&type=INTERVIEW&from=2027-02-15&to=2027-02-15";
+        mvc.perform(get(base + "&search=acme").with(owner("alice")))
+                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].company").value("Acme"))
+                .andExpect(jsonPath("$.items[0].action.id").value(match.id())).andExpect(jsonPath("$.items[0].action.userId").doesNotExist());
+        mvc.perform(get("/api/actions/search").param("search", "[java]").with(owner("alice")))
+                .andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get("/api/actions/search?search=engineer").with(owner("alice"))).andExpect(jsonPath("$.totalElements").value(2));
+        mvc.perform(get(base).with(owner("bob"))).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(post("/api/actions/" + match.id() + "/complete").with(owner("alice")).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")).andExpect(status().isOk());
+        mvc.perform(get(base).with(owner("alice"))).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get("/api/actions/search?status=COMPLETED").with(owner("alice"))).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get("/api/actions/search").with(owner("alice"))).andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test void allActionsValidatesFiltersAndPagesBeyondDashboardWindow() throws Exception {
+        var app = app(); var due = LocalDate.now().plusMonths(3);
+        for (int i = 0; i < 12; i++) create(app.id(), input("Task " + i, JobAction.Type.FOLLOW_UP, due.plusDays(i), "", null));
+        mvc.perform(get("/api/actions/search?status=PENDING&size=10&page=1").with(owner("alice")))
+                .andExpect(jsonPath("$.totalElements").value(12)).andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.items.length()").value(2)).andExpect(jsonPath("$.items[0].action.title").value("Task 10"));
+        for (String query : java.util.List.of("from=2027-02-20&to=2027-02-01", "size=51", "page=-1", "type=INVALID", "from=bad"))
+            mvc.perform(get("/api/actions/search?" + query).with(owner("alice"))).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/actions/search").param("search", "x".repeat(121)).with(owner("alice"))).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/actions/search")).andExpect(status().isUnauthorized());
+    }
+
     @Test void dashboardGroupsBoundariesAndHidesFinishedAndOtherOwners() throws Exception {
         var parent = app();
         var today = LocalDate.now(ZoneId.of("Asia/Kolkata"));

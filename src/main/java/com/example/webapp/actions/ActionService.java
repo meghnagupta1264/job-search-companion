@@ -52,6 +52,26 @@ public class ActionService {
         }).toList();
         return new AgendaPage(items, page, (int) Math.ceil(found.total() / 20.0), found.total(), today, owner.timezone().getId());
     }
+    public record SearchPage(List<AgendaItem> items, int page, int size, long totalElements, int totalPages) {}
+    public SearchPage search(JobAction.Status status, JobAction.Type type, LocalDate from, LocalDate to,
+                             String search, int page, int size) {
+        if (page < 0 || page > 100000 || size < 1 || size > 50)
+            throw new IllegalArgumentException("Choose a valid action page and size (1–50).");
+        if (search.length() > 120) throw new IllegalArgumentException("Search must be at most 120 characters.");
+        if (from != null && to != null && from.isAfter(to))
+            throw new IllegalArgumentException("The start date must be on or before the end date.");
+        String term = search.trim();
+        var ids = term.isEmpty() ? List.<String>of() : applications.matchingActionParents(owner.id(), term);
+        var found = actions.search(owner.id(), status, type, from, to, term, ids, page, size);
+        // Only hydrate the current page; avoid per-card requests from the browser.
+        var parents = applications.findOwnedBatch(found.items().stream().map(JobAction::applicationId).distinct().toList(), owner.id())
+                .stream().collect(java.util.stream.Collectors.toMap(JobApplication::id, app -> app));
+        var items = found.items().stream().map(action -> {
+            var app = parents.get(action.applicationId());
+            return new AgendaItem(response(action), app == null ? "Unavailable application" : app.company(), app == null ? "" : app.role());
+        }).toList();
+        return new SearchPage(items, page, size, found.total(), (int) Math.ceil(found.total() / (double) size));
+    }
     public ActionResponse create(String applicationId, ActionRequest request) {
         active(ownedApplication(applicationId));
         Instant scheduled=scheduled(request);

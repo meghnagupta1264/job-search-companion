@@ -48,10 +48,10 @@ function AgendaSection({ section }: { section: Section }) {
     {editing && <ActionForm key={editing.id + '-' + editing.version} initial={editing} applicationId={editing.applicationId} timezone={editing.timezone} onCancel={() => setEditing(undefined)} onReload={reload} onSaved={async () => {setEditing(undefined); setMessage('Action rescheduled.'); await refresh()}} />}
     {query.isSuccess && !items.length && <p className="text-secondary mb-0">{section === 'OVERDUE' ? 'No overdue actions.' : section === 'TODAY' ? 'No pending actions due today.' : 'No pending actions in the next 7 days.'}</p>}
     <div className="agenda-grid">{items.map(({ action, company, role }) => <article key={action.id} className="agenda-card">
-      {/* Initials provide a consistent visual anchor without inventing company logos. */}
+      {/* Full company names stay recognizable without a large initials placeholder. */}
       <span className="eyebrow action-kind">{actionTypeLabel(action.type)}</span>
-      <div className="company-mark" aria-hidden="true">{company.trim().slice(0, 2).toUpperCase()}</div>
-      <h3 className="h6 text-break">{action.title}</h3><p className="mb-1 text-break company-line">{company}</p><p className="small text-secondary">{role}</p>
+      <span className="company-name-badge">{company}</span>
+      <h3 className="h6 text-break">{action.title}</h3><p className="small text-secondary">{role}</p>
       <p className="small text-secondary mb-2">{actionTypeLabel(action.type)} · Due {dateLabel(action.dueOn)}{action.scheduledAt && <> · {new Intl.DateTimeFormat(undefined, { timeStyle: 'short', timeZone: action.timezone }).format(new Date(action.scheduledAt))} ({action.timezone})</>}</p>
       <div className="agenda-card-controls d-flex flex-wrap align-items-center gap-3"><Link to={'/applications/' + encodeURIComponent(action.applicationId)}>Open application</Link><button className="btn btn-outline-success btn-sm" disabled={complete.isPending || !!editing} onClick={() => {setMessage(''); complete.mutate(action)}}>Complete</button><button className="btn btn-outline-dark btn-sm" disabled={complete.isPending || !!editing} onClick={() => {setMessage(''); complete.reset(); setEditing(action)}}>Reschedule</button></div>
     </article>)}</div>
