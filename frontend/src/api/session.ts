@@ -28,3 +28,8 @@ export function login(username: string, password: string) {
 export function logout() {
   return write<void>('/api/session/logout', '', 'application/x-www-form-urlencoded')
 }
+
+// Password changes revoke sessions; credentials remain in request/component memory only.
+export function changePassword(currentPassword: string, newPassword: string, confirmation: string) {
+  return write<void>('/api/account/password', JSON.stringify({currentPassword,newPassword,confirmation}), 'application/json')
+}

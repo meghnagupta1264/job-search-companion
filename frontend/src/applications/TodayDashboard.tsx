@@ -15,8 +15,12 @@ interface AgendaPage {
 
 /** Each section pages independently, so a long overdue list cannot hide today's interviews. */
 export function TodayDashboard() {
-  return <><div className="d-flex flex-wrap justify-content-between gap-3 mb-4"><div><p className="eyebrow">Your personal workspace</p><h1 className="page-title">Next steps for your <em>career</em></h1><p className="text-secondary mb-0">Your next steps across all applications. Follow-ups are created manually.</p></div><Link to="/applications/new" className="btn btn-dark align-self-start">Add application</Link></div>
-    <div className="d-grid gap-4">{(['OVERDUE', 'TODAY', 'UPCOMING'] as Section[]).map(section => <AgendaSection key={section} section={section} />)}</div></>
+  // Density is a device preference only; storage failure must never block the dashboard.
+  const [compact,setCompact] = useState(() => {try{return localStorage.getItem('dashboard-density')==='compact'}catch{return false}})
+  function density(value: boolean) {setCompact(value);try{localStorage.setItem('dashboard-density',value?'compact':'comfortable')}catch{/* Private/limited storage still supports this session's choice. */}}
+  return <div className={compact?'dashboard-compact':''}><div className="d-flex flex-wrap justify-content-between gap-3 mb-4"><div><p className="eyebrow">Your personal workspace</p><h1 className="page-title">Next steps for your <em>career</em></h1><p className="text-secondary mb-0">Your next steps across all applications. Follow-ups are created manually.</p></div><Link to="/applications/new" className="btn btn-dark align-self-start">Add application</Link></div>
+    <div className="d-flex flex-wrap justify-content-between gap-3 align-items-center mb-4"><Link to="/calendar">View this week in Calendar →</Link><div className="btn-group" role="group" aria-label="Dashboard density"><button className={'btn btn-sm '+(!compact?'btn-dark':'btn-outline-dark')} aria-pressed={!compact} onClick={()=>density(false)}>Comfortable</button><button className={'btn btn-sm '+(compact?'btn-dark':'btn-outline-dark')} aria-pressed={compact} onClick={()=>density(true)}>Compact</button></div></div>
+    <div className="d-grid gap-4">{(['OVERDUE', 'TODAY', 'UPCOMING'] as Section[]).map(section => <AgendaSection key={section} section={section} />)}</div></div>
 }
 
 function AgendaSection({ section }: { section: Section }) {

@@ -1,11 +1,15 @@
-import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError } from '../api/client'
 import { getSession, getSetupStatus, login, setupAccount } from '../api/session'
 
 export function LoginPage() {
+  const [params] = useSearchParams()
   const client = useQueryClient()
+  const [passwordChanged] = useState(() => client.getQueryData(['password-change-notice']) === true)
+  useEffect(() => {client.removeQueries({queryKey:['password-change-notice']})}, [client])
   const setup = useQuery({ queryKey: ['setup-status'], queryFn: getSetupStatus, retry: false })
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -72,6 +76,7 @@ export function LoginPage() {
         <p className="text-secondary mb-4">{isSetup ? 'Create your private account to get started. This app supports one owner.' : 'Sign in to your personal job search workspace.'}</p>
         <div className="card border-0 shadow-sm"><div className="card-body p-4 p-sm-5">
           <h2 className="h4 mb-4">{isSetup ? 'Create your account' : 'Sign in'}</h2>
+          {(passwordChanged || params.get('passwordChanged')==='1') && !isSetup && <p className="alert alert-success" role="status">Password changed. Sign in with your new password.</p>}
           {created && !isSetup && <p className="alert alert-success" role="status">Account created. Sign in with your new password.</p>}
           {(localError || submit.isError) && <p className="alert alert-danger" role="alert">{localError || submit.error?.message}</p>}
           <form onSubmit={handleSubmit}>

@@ -211,7 +211,7 @@ Each section shows company, role, action type and schedule, with **Complete**, *
 
 ## Visual theme
 
-The interface uses a forest-green sidebar, warm ivory canvas, muted gold accents and rounded white cards. Desktop navigation becomes a compact header on mobile. Local font stacks provide sans-serif body text and serif heading accents without external font downloads. The theme covers login/setup, Today, list/board, application forms/details, actions and timeline; existing features and APIs are unchanged.
+The interface uses a forest-green sidebar, warm ivory canvas, muted gold accents and rounded white cards. Desktop navigation becomes a compact header on mobile. The wordmark uses a classic local serif stack; the small sidebar tagline uses locally bundled Manrope (with its OFL license). Local font stacks provide body text and heading accents. No external font service is required. The theme covers login/setup, Today, list/board, application forms/details, actions and timeline; existing features and APIs are unchanged.
 
 ## All Actions
 
@@ -238,3 +238,24 @@ The all-day row also shows **Applied — company** on the application's recorded
 Recorded offers, acceptance, rejection and withdrawal appear on their history-event date in the account timezone. Milestones stay visible independently of the **Show actions** status filter; click one to open application details. In All statuses, a completed interview can have both its timed action block and an all-day Interviewed milestone. Applied dates follow corrections to the application record; history events use immutable snapshots. Older records can show Applied if an application date is known, but interview/status history isn't invented.
 
 `GET /api/calendar/milestones?from=YYYY-MM-DD&to=YYYY-MM-DD` returns owner-scoped milestone cards for an inclusive range of up to seven days. It reads existing applications and activity history; no new collection is created.
+
+## Dashboard density and account settings
+
+On Today, choose **Comfortable** or **Compact**. Compact shows slimmer rows with the full company name, task, schedule and existing controls. The preference is stored in this browser only; it contains no credentials. If browser storage is unavailable, the toggle still works for the current page session. A Calendar link provides quick weekly planning.
+
+Open **Settings → Change password**. Enter your current password, a different new password (12–72 characters and at most 72 UTF-8 bytes), and confirmation. Successful changes sign out existing registered sessions and return you to login with a confirmation message. The old password stops working. Forgotten-password recovery is not part of this feature.
+
+`POST /api/account/password` accepts `{ currentPassword, newPassword, confirmation }`, requires login and CSRF, and returns empty 204 on success. Passwords are never returned or stored in browser storage. An atomic current-hash predicate prevents two concurrent changes from overwriting each other. Existing MongoDB account fields remain unchanged except passwordHash. Sessions are tracked in memory with Spring Security SessionRegistry; revoked sessions receive 401 on their next request.
+
+Settings and Sign out are available in the top-right hamburger **Account menu**, together with your username. The sidebar keeps the four main workspace views. The menu supports keyboard activation, Escape and outside-click dismissal. Resume/profile features are planned separately.
+
+The Kanban board fits all seven status columns across desktop widths of 1100px and above. Smaller screens wrap columns into rows instead of requiring horizontal scrolling. Cards use compact spacing; vertical column scrolling, pagination, drag/drop and Move to remain available.
+
+Kanban cards show company and application date only. Drag to change status; open the linked company and use Edit application for status changes on touch devices or with the keyboard. The Move to selector has been removed from cards.
+
+## Planned next features
+
+The following are saved for later implementation:
+
+- **Interview preparation:** a lightweight preparation checklist and questions attached to each interview action, with saved progress.
+- **Resume upload and extraction:** a profile/resume page for uploading, previewing, downloading and replacing the current PDF resume. Extract suggested basic profile details from text-based PDFs, then let the user review/edit before saving. Scanned-PDF OCR and automatic job-application filling are separate future decisions.

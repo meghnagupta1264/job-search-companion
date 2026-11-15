@@ -8,8 +8,17 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfiguration {
+    // Track sessions so credential changes can revoke previously authenticated browsers.
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    org.springframework.security.core.session.SessionRegistry sessionRegistry() {
+        return new org.springframework.security.core.session.SessionRegistryImpl();
+    }
+    @Bean
+    org.springframework.security.web.session.HttpSessionEventPublisher sessionEvents() {
+        return new org.springframework.security.web.session.HttpSessionEventPublisher();
+    }
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry) throws Exception {
         return http
                 .authorizeHttpRequests(requests -> requests
                         // Setup is public only until the fixed owner document exists.
@@ -29,7 +38,9 @@ public class SecurityConfiguration {
                         .invalidateHttpSession(true).clearAuthentication(true).deleteCookies("JSESSIONID")
                         .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)))
                 // Rotate an existing anonymous session ID when it becomes authenticated.
-                .sessionManagement(session -> session.sessionFixation(fixation -> fixation.changeSessionId()))
+                .sessionManagement(session -> session.sessionFixation(fixation -> fixation.changeSessionId())
+                        .maximumSessions(-1).sessionRegistry(registry)
+                        .expiredSessionStrategy(event -> ApiError.write(event.getResponse(),401,"SESSION_EXPIRED","Your session expired. Sign in again.")))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, exception) ->
                                 ApiError.write(response, 401, "UNAUTHENTICATED", "Sign in to continue."))

@@ -40,10 +40,11 @@ export function ApplicationBoard({ params }: { params: URLSearchParams }) {
   const columns = selected ? statuses.filter(status => status === selected) : statuses
   if (!columns.length) return <p className="alert alert-danger" role="alert">Choose a valid status filter to display the board.</p>
   return <>
-    <p className="text-secondary small">Drag a card to change its status, or use its Move to selector. Each column loads independently.</p>
+    <p className="text-secondary small">Drag a card to change its status. Open the company for details or to edit its status.</p>
     <p className="small text-success" role="status" aria-live="polite">{save.isPending ? 'Saving status…' : message}</p>
     {!pending && save.isError && <div className="alert alert-danger" role="alert">{save.error.message}<div className="mt-2"><button className="btn btn-outline-danger btn-sm" onClick={reload}>Reload board</button></div></div>}
-    <div className="kanban-board" aria-label="Application board">{columns.map(status => <BoardColumn key={status} status={status} params={params} busy={save.isPending} onMove={move} dragged={dragged} onDrag={setDragged} />)}</div>
+    {/* Fluid columns fit all statuses on desktop and wrap on smaller screens. */}
+    <div className={'kanban-board'+(columns.length===1?' kanban-single':'')} aria-label="Application board">{columns.map(status => <BoardColumn key={status} status={status} params={params} busy={save.isPending} onMove={move} dragged={dragged} onDrag={setDragged} />)}</div>
     {pending && <DateDialog move={pending} busy={save.isPending} error={save.error} onCancel={() => { if (!save.isPending) {setPending(null); save.reset()} }} onSubmit={date => save.mutate({ ...pending, appliedOn: date })} reload={reload} />}
   </>
 }
@@ -72,10 +73,8 @@ function BoardColumn({ status, params, busy, onMove, dragged, onDrag }: {
     {column.isError && <p className="small text-danger" role="alert">{column.error.message} <button className="btn btn-link btn-sm p-0" onClick={() => void column.refetch()}>Retry</button></p>}
     {column.isSuccess && cards.length === 0 && <p className="small text-secondary">No applications{search || source ? ' match these filters' : ' here yet'}.</p>}
     <div className="d-grid gap-3">{cards.map(app => <article key={app.id} className="kanban-card card border-0 shadow-sm" draggable={!busy} onDragStart={event => {event.dataTransfer.setData('text/plain', app.id); event.dataTransfer.effectAllowed = 'move'; onDrag(app)}} onDragEnd={() => {onDrag(null); setOver(false)}}>
-      <div className="card-body p-3"><Link to={'/applications/' + app.id} className="fw-semibold text-dark text-break">{app.company}</Link><p className="mb-2 text-break">{app.role}</p>{app.location && <p className="small text-secondary mb-1">{app.location}</p>}<p className="small text-secondary mb-2">{app.source || 'Source not specified'} · {dateLabel(app.appliedOn)}</p>
-        {/* A native select makes moving cards available without drag gestures. */}
-        <label htmlFor={'move-' + app.id} className="small form-label mb-1">Move to</label><select id={'move-' + app.id} aria-label={'Move ' + app.role + ' at ' + app.company} className="form-select form-select-sm" value={app.status} disabled={busy} onChange={event => onMove(app, event.target.value as ApplicationStatus)}>{statuses.map(value => <option key={value} value={value}>{statusLabel(value)}</option>)}</select>
-      </div>
+      {/* Keep narrow board cards focused; full details and status editing are on the linked page. */}
+      <div className="card-body p-3"><Link to={'/applications/' + app.id} className="fw-semibold text-dark text-break">{app.company}</Link><p className="small text-secondary mb-0 mt-2">{dateLabel(app.appliedOn)}</p></div>
     </article>)}</div>
     {column.hasNextPage && <button className="btn btn-outline-dark btn-sm w-100 mt-3" disabled={column.isFetchingNextPage} onClick={() => void column.fetchNextPage()}>{column.isFetchingNextPage ? 'Loading…' : 'Load more ' + statusLabel(status).toLowerCase()}</button>}
   </section>
