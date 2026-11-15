@@ -196,3 +196,19 @@ The `actions` collection lives inside the existing `job_search_companion` databa
 Create/edit JSON fields: title, type, dueOn (YYYY-MM-DD), scheduledTime (optional HH:mm, interviews only), details, and version (required for editing). Ownership, status, audit timestamps, and completion/cancellation timestamps are server-assigned. Writes require login and CSRF. Conflict responses offer reload instead of silently overwriting another edit. The Today dashboard and notifications are not implemented in this stage.
 
 Action integration tests use `job_search_companion_actions_it`, which is removed after the test class. `scripts/cleanup-test-databases.js` also knows this exact name and the isolated step-6 browser database.
+
+## Today dashboard (step 7)
+
+After login, **Today** is the landing page (`/today`). It brings together pending actions from every application:
+
+- **Overdue:** due before today.
+- **Today:** due on the current account date.
+- **Upcoming:** due tomorrow through seven days from today, inclusive.
+
+Each section shows company, role, action type and schedule, with **Complete**, **Reschedule**, and **Open application** controls. Sections load 20 actions at a time independently. Completing or rescheduling uses the same version checks and timeline history as the application detail page. Completing never generates a follow-up.
+
+`GET /api/dashboard/actions?section=OVERDUE|TODAY|UPCOMING&page=0` returns an owner-scoped page, count, server date and account timezone. Dates are computed on the backend in the account timezone; the dashboard refreshes every minute and when refocused. Completed/cancelled actions and actions more than seven days away are excluded. Interview times use the account timezone. This is an in-app dashboard without email or background notifications.
+
+## Visual theme
+
+The interface uses a forest-green sidebar, warm ivory canvas, muted gold accents and rounded white cards. Desktop navigation becomes a compact header on mobile. Local font stacks provide sans-serif body text and serif heading accents without external font downloads. The theme covers login/setup, Today, list/board, application forms/details, actions and timeline; existing features and APIs are unchanged.

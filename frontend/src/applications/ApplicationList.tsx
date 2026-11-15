@@ -30,7 +30,7 @@ export function ApplicationList() {
   const active = Boolean(params.get('search') || params.get('status') || params.get('source') || params.get('page'))
   return <>
     <div className="d-flex flex-wrap gap-3 justify-content-between align-items-end mb-4">
-      <div><p className="eyebrow mb-2">Your job search</p><h1 className="display-6 fw-semibold mb-2">Applications</h1><p className="text-secondary mb-0">Keep every opportunity in one place.</p></div>
+      <div><p className="eyebrow mb-2">Your job search</p><h1 className="page-title mb-2">Your <em>applications</em> library</h1><p className="text-secondary mb-0">Keep every opportunity in one place.</p></div>
       <div className="d-flex gap-3 align-items-center"><div className="btn-group" role="group" aria-label="Application view"><button className={'btn btn-sm ' + (!board ? 'btn-dark' : 'btn-outline-dark')} aria-pressed={!board} onClick={() => toggle('list')}>List</button><button className={'btn btn-sm ' + (board ? 'btn-dark' : 'btn-outline-dark')} aria-pressed={board} onClick={() => toggle('board')}>Board</button></div><Link to="/applications/new" className="btn btn-dark">+ Add application</Link></div>
     </div>
     <section className="card border-0 shadow-sm mb-4" aria-label="Search and filters"><div className="card-body p-3 p-md-4">

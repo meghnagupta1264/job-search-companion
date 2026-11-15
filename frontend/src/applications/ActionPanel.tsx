@@ -23,6 +23,7 @@ export function ActionPanel({ app, timezone }: { app: JobApplication; timezone: 
     // Action writes also advance the parent version and can reorder the board/list.
     await Promise.all([
       client.invalidateQueries({ queryKey: ['actions', app.id] }),
+      client.invalidateQueries({ queryKey: ['dashboard'] }),
       client.invalidateQueries({ queryKey: ['activities', app.id] }),
       client.invalidateQueries({ queryKey: ['application', app.id] }),
       client.invalidateQueries({ queryKey: ['applications'] }),
@@ -59,7 +60,7 @@ export function ActionPanel({ app, timezone }: { app: JobApplication; timezone: 
   </div></section>
 }
 
-function ActionForm({ initial, applicationId, timezone, onSaved, onCancel, onReload }: {
+export function ActionForm({ initial, applicationId, timezone, onSaved, onCancel, onReload }: {
   initial?: JobAction; applicationId: string; timezone: string; onSaved: () => Promise<void>; onCancel: () => void; onReload: () => void
 }) {
   // Copy only editable fields: audit timestamps and status are server-controlled.

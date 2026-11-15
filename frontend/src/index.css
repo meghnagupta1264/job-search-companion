@@ -33,3 +33,149 @@ body { margin: 0; min-width: 320px; background: #f4f6f8; color: #172337; }
 .timeline-list { list-style: none; padding: 0; }
 .timeline-entry { border-left: 2px solid #dce2e9; padding: .25rem 0 1.5rem 1rem; overflow-wrap: anywhere; }
 .timeline-entry:last-child { padding-bottom: .25rem; }
+
+/* Reference-inspired design tokens: local font stacks keep the app usable offline. */
+:root {
+  --forest: #203129;
+  --ivory: #fbf9f5;
+  --gold: #9a702a;
+  --gold-light: #d1ae64;
+  --ink: #2c332e;
+  --muted: #6e736c;
+  --line: #e8e5dd;
+  --wash: #f3f0e9;
+  --bs-body-font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  --bs-body-color: var(--ink);
+  --bs-body-bg: var(--ivory);
+  --bs-secondary-color: var(--muted);
+  --bs-border-color: var(--line);
+  --bs-link-color: #375743;
+  --bs-link-hover-color: #76531e;
+}
+body { background: var(--ivory); color: var(--ink); font-family: var(--bs-body-font-family); line-height: 1.6; }
+a { text-underline-offset: .22em; }
+h1, h2, h3 { color: var(--ink); }
+.page-title { font-size: clamp(1.9rem, 3.4vw, 2.75rem); line-height: 1.15; font-weight: 500; letter-spacing: -.045em; margin-bottom: 1rem; }
+.page-title em { font-family: "Baskerville", "Iowan Old Style", Georgia, serif; color: var(--gold); font-weight: 400; }
+.eyebrow { color: var(--gold); font-size: .7rem; font-weight: 600; letter-spacing: .14em; }
+.text-secondary, .form-text { color: var(--muted) !important; }
+.text-dark { color: var(--forest) !important; }
+/* Desktop rail and fluid content echo the references without squeezing wide boards. */
+.workspace-shell { min-height: 100vh; }
+.workspace-sidebar { position: fixed; inset: 0 auto 0 0; width: 248px; background: var(--forest); color: #e6e9e1; display: flex; flex-direction: column; padding: 44px 32px 28px; overflow-y: auto; z-index: 20; }
+.brand-lockup { color: var(--gold-light); text-decoration: none; display: block; }
+.brand-lockup:hover { color: #ead19a; }
+.brand-lockup > span { font-family: Baskerville, "Iowan Old Style", Georgia, serif; font-size: 1.35rem; line-height: 1.25; letter-spacing: .13em; text-transform: uppercase; display: block; }
+.brand-lockup small { display: block; margin-top: 14px; color: #c1c8bd; font-size: .57rem; text-transform: uppercase; letter-spacing: .19em; }
+.workspace-nav { display: grid; gap: 10px; margin-top: 64px; }
+.workspace-nav a { color: #c4cec3; text-decoration: none; font-size: .73rem; text-transform: uppercase; letter-spacing: .13em; padding: 12px 0; border-bottom: 1px solid transparent; }
+.workspace-nav a span { margin-right: 10px; font-size: 1rem; }
+.workspace-nav a.active { color: var(--gold-light); border-color: #52604a; }
+.workspace-nav a:hover { color: white; }
+.sidebar-note { margin-top: 62px; }
+.sidebar-flourish { color: var(--gold-light); font: italic 1.6rem Baskerville, Georgia, serif; }
+.sidebar-note p { color: #b8c2b5; font-size: .8rem; margin-top: 12px; }
+.sidebar-account { display: grid; gap: 7px; margin-top: auto; padding-top: 50px; font-size: .83rem; }
+.account-label { text-transform: uppercase; font-size: .57rem; letter-spacing: .16em; color: #b8c2b5; }
+.sidebar-signout { padding: 6px 0; border: none; background: none; color: var(--gold-light); text-align: left; font-size: .75rem; }
+.workspace-content { margin-left: 248px; padding: 52px clamp(24px, 4.5vw, 80px) 72px; min-width: 0; max-width: 1800px; }
+.workspace-content:focus { outline: none; }
+.skip-link { position: fixed; top: -100px; left: 16px; background: white; padding: 12px; z-index: 100; }
+.skip-link:focus { top: 12px; }
+/* Bootstrap components inherit one coherent palette on all existing feature screens. */
+.card { border-radius: 24px; background: #fff; }
+.shadow-sm { box-shadow: 0 5px 24px rgb(45 44 30 / 3%) !important; }
+.card-body.p-4 { padding: clamp(22px, 3vw, 38px) !important; }
+.btn { border-radius: 4px; font-size: .75rem; font-weight: 600; padding: .7rem 1rem; letter-spacing: .035em; }
+.btn-sm { padding: .45rem .7rem; font-size: .7rem; }
+.btn-dark { --bs-btn-bg: var(--forest); --bs-btn-border-color: var(--forest); --bs-btn-hover-bg: #354a3b; --bs-btn-hover-border-color: #354a3b; --bs-btn-active-bg: #354a3b; }
+.btn-outline-dark { --bs-btn-color: var(--forest); --bs-btn-border-color: #aeb8aa; --bs-btn-hover-bg: var(--forest); --bs-btn-hover-border-color: var(--forest); --bs-btn-active-bg: var(--forest); }
+.btn-outline-success { --bs-btn-color: #355b40; --bs-btn-border-color: #bac9b8; --bs-btn-hover-bg: #355b40; --bs-btn-hover-border-color: #355b40; }
+.btn-link { color: #375743; }
+.form-control, .form-select { background-color: var(--wash); border: 1px solid transparent; border-radius: 7px; padding: .75rem .9rem; font-size: .87rem; color: var(--ink); }
+.form-select { padding-right: 2.2rem; }
+.form-control::placeholder { color: #73786e; }
+.form-control:focus, .form-select:focus { background-color: #fff; border-color: #8c9b82; box-shadow: 0 0 0 .2rem rgb(75 102 65 / 13%); }
+.form-label { color: #555c51; font-size: .75rem; letter-spacing: .04em; }
+.form-text { font-size: .75rem; }
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: #a44338; }
+:focus-visible { outline: 3px solid #b08036; outline-offset: 4px; }
+.bg-light { background-color: #f7f5ef !important; }
+.text-bg-light { background-color: var(--wash) !important; color: #555f50 !important; }
+.alert { border-radius: 12px; font-size: .88rem; }
+/* Dashboard sections stay light; individual action cards carry the visual structure. */
+.agenda-section { margin-top: 24px; }
+.section-title { font: 400 1.12rem Baskerville, Georgia, serif; text-transform: uppercase; letter-spacing: .12em; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 12px; }
+.section-title .badge { color: var(--gold) !important; background: none !important; text-transform: none; letter-spacing: normal; font: 500 .75rem var(--bs-body-font-family); }
+.agenda-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: 24px; }
+.agenda-card { background: white; border-radius: 26px; padding: 26px; box-shadow: 0 4px 22px rgb(45 44 30 / 3%); display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.action-kind { margin-bottom: 18px; font-size: .65rem; }
+.company-mark { background: var(--wash); border-radius: 60px; min-height: 96px; display: grid; place-items: center; color: #65725d; font: 400 2rem Baskerville, Georgia, serif; margin-bottom: 22px; }
+.agenda-card h3 { font-size: 1rem; line-height: 1.4; }
+.company-line { font-weight: 600; }
+.agenda-card-controls { border-top: 1px solid var(--line); padding-top: 16px; margin-top: auto; }
+.agenda-card-controls a { font-size: .74rem; }
+.agenda-overdue .action-kind { color: #8b4c26; }
+/* Table, board and history retain all original controls and independent scrolling. */
+.application-table { --bs-table-bg: transparent; --bs-table-border-color: var(--line); }
+.application-table th { font: 400 .75rem Baskerville, Georgia, serif; letter-spacing: .09em; text-transform: uppercase; background: transparent; color: #676c61; }
+.application-table td { font-size: .84rem; }
+.application-table tbody tr:hover { background: #faf9f5; }
+.application-table td:first-child a { text-decoration: none; }
+.status-badge { font-size: .65rem; font-weight: 500; letter-spacing: .04em; background: #efeee8; color: #62695e; padding: .35rem .65rem; }
+.status-applied, .status-screening { background: #e7efe8; color: #345640; }
+.status-interviewing { background: #f5edd7; color: #806021; }
+.status-accepted { background: #e1eedf; color: #355636; }
+.status-rejected, .status-withdrawn { background: #f3e8e1; color: #8c4d3b; }
+.kanban-column { background: #f0eee6; border-radius: 18px; }
+.kanban-column.drop-active { border-color: #9b7c41; background: #ece8d8; }
+.kanban-card { border-radius: 14px; }
+.status-dialog { background: var(--ivory); border-radius: 20px; }
+.status-dialog::backdrop { background: #20312988; }
+.timeline-entry { border-color: #d7c699; position: relative; padding-left: 24px; }
+.timeline-entry::before { content: ''; position: absolute; left: -6px; top: 8px; width: 10px; height: 10px; background: #b9954b; border: 2px solid var(--ivory); border-radius: 50%; }
+.action-card { border-color: var(--line) !important; border-radius: 16px !important; padding: 22px !important; }
+.detail-panel, .form-panel { max-width: 1000px; }
+.detail-panel h2, .auth-panel h2 { font-family: Baskerville, Georgia, serif; font-weight: 400; }
+.auth-panel { margin-top: 5vh; }
+/* Compact rail prevents overflow on phones, with all navigation still visible. */
+@media (max-width: 991px) {
+  .workspace-sidebar { width: 208px; padding: 32px 24px; }
+  .workspace-content { margin-left: 208px; padding: 36px 26px 56px; }
+}
+@media (max-width: 767px) {
+  .workspace-sidebar { position: static; width: auto; padding: 24px; display: grid; grid-template-columns: 1fr auto; gap: 20px; overflow: visible; }
+  .brand-lockup > span { font-size: 1.05rem; }
+  .brand-lockup small { font-size: .5rem; margin-top: 8px; }
+  .workspace-nav { margin: 0; display: flex; gap: 24px; grid-column: 1 / -1; grid-row: 2; }
+  .workspace-nav a { padding: 4px 0 8px; font-size: .67rem; }
+  .sidebar-note { display: none; }
+  .sidebar-account { padding: 0; margin: 0; max-width: 110px; text-align: right; align-self: center; font-size: .72rem; }
+  .sidebar-signout { text-align: right; }
+  .account-label { display: none; }
+  .workspace-content { margin: 0; padding: 30px 20px 48px; }
+  .agenda-card { padding: 24px; }
+  .company-mark { min-height: 72px; }
+  .application-table td, .application-table th { padding: .85rem; }
+  .card-body.p-4 { padding: 22px !important; }
+  .page-title { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+
+/* Account setup/login gets the same visual identity without adding new navigation. */
+.auth-layout { min-height: 100vh; display: grid; grid-template-columns: minmax(300px, 38%) 1fr; }
+.auth-intro { background: var(--forest); padding: clamp(32px, 5vw, 80px); display: flex; flex-direction: column; color: #e7ecdf; }
+.auth-brand { font: 400 1.45rem Baskerville, Georgia, serif; color: var(--gold-light); letter-spacing: .14em; text-transform: uppercase; }
+.auth-tagline { margin: auto 0; padding: 60px 0; font-size: clamp(1.8rem, 3vw, 3rem); line-height: 1.3; letter-spacing: -.03em; }
+.auth-tagline em { font-family: Baskerville, Georgia, serif; color: var(--gold-light); }
+.auth-intro > span { text-transform: uppercase; font-size: .65rem; letter-spacing: .15em; color: #bdc7b8; }
+.auth-layout .auth-panel { width: 100%; max-width: 600px; padding: 60px 40px; margin: auto; }
+@media (max-width: 767px) {
+  .auth-layout { display: block; }
+  .auth-intro { padding: 28px; }
+  .auth-brand { font-size: 1.1rem; margin-bottom: 0; }
+  .auth-tagline, .auth-intro > span { display: none; }
+  .auth-layout .auth-panel { padding: 32px 20px; }
+}
+/* Bootstrap's link utilities consume RGB tokens as well as the hex colours. */
+:root { --bs-link-color-rgb: 55, 87, 67; --bs-link-hover-color-rgb: 118, 83, 30; }

@@ -33,6 +33,25 @@ public class ActionService {
         var found=actions.list(owner.id(),applicationId,status,page,size);
         return new Page(found.items().stream().map(this::response).toList(),page,size,found.total(),(int)Math.ceil((double)found.total()/size));
     }
+    public enum AgendaSection { OVERDUE, TODAY, UPCOMING }
+    public record AgendaItem(ActionResponse action, String company, String role) {}
+    public record AgendaPage(List<AgendaItem> items, int page, int totalPages, long totalElements,
+                             LocalDate today, String timezone) {}
+    public AgendaPage agenda(AgendaSection section, int page) {
+        if (page < 0 || page > 100000) throw new IllegalArgumentException("Choose a valid dashboard page.");
+        var today = LocalDate.now(owner.timezone());
+        // Upcoming includes tomorrow through day seven; the exclusive upper bound avoids overlap.
+        LocalDate from = switch (section) { case OVERDUE -> null; case TODAY -> today; case UPCOMING -> today.plusDays(1); };
+        LocalDate until = switch (section) { case OVERDUE -> today; case TODAY -> today.plusDays(1); case UPCOMING -> today.plusDays(8); };
+        var found = actions.agenda(owner.id(), from, until, page, 20);
+        var parents = applications.findOwnedBatch(found.items().stream().map(JobAction::applicationId).distinct().toList(), owner.id())
+                .stream().collect(java.util.stream.Collectors.toMap(JobApplication::id, app -> app));
+        var items = found.items().stream().map(action -> {
+            var app = parents.get(action.applicationId());
+            return new AgendaItem(response(action), app == null ? "Unavailable application" : app.company(), app == null ? "" : app.role());
+        }).toList();
+        return new AgendaPage(items, page, (int) Math.ceil(found.total() / 20.0), found.total(), today, owner.timezone().getId());
+    }
     public ActionResponse create(String applicationId, ActionRequest request) {
         active(ownedApplication(applicationId));
         Instant scheduled=scheduled(request);

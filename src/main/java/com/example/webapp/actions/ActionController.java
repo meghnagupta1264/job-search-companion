@@ -18,6 +18,10 @@ public class ActionController {
     @GetMapping("/actions")
     public ActionService.Page all(@RequestParam(required=false)JobAction.Status status,
             @RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size){return service.list(null,status,page,size);}
+    // Separate route keeps the existing per-action and list contracts unchanged.
+    @GetMapping("/dashboard/actions")
+    public ActionService.AgendaPage agenda(@RequestParam ActionService.AgendaSection section,
+            @RequestParam(defaultValue="0") int page) { return service.agenda(section, page); }
     @GetMapping("/actions/{id}")public ActionResponse get(@PathVariable String id){return service.get(id);}
     @PostMapping("/applications/{id}/actions")@ResponseStatus(HttpStatus.CREATED)
     public ActionResponse create(@PathVariable String id,@Valid @RequestBody ActionRequest request){return service.create(id,request);}

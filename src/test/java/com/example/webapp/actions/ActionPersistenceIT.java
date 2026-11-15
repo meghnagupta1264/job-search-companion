@@ -59,6 +59,49 @@ class ActionPersistenceIT extends IsolatedMongoIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test void dashboardGroupsBoundariesAndHidesFinishedAndOtherOwners() throws Exception {
+        var parent = app();
+        var today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        create(parent.id(), input("Late", JobAction.Type.FOLLOW_UP, today.minusDays(1), "", null));
+        create(parent.id(), input("Now", JobAction.Type.INTERVIEW, today, "14:30", null));
+        create(parent.id(), input("Tomorrow", JobAction.Type.OTHER, today.plusDays(1), "", null));
+        create(parent.id(), input("Day seven", JobAction.Type.OTHER, today.plusDays(7), "", null));
+        create(parent.id(), input("Outside", JobAction.Type.OTHER, today.plusDays(8), "", null));
+        var done = create(parent.id(), input("Done", JobAction.Type.OTHER, today, "", null));
+        mvc.perform(post("/api/actions/" + done.id() + "/complete").with(owner("alice")).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")).andExpect(status().isOk());
+        mvc.perform(get("/api/dashboard/actions?section=OVERDUE").with(owner("alice")))
+                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].action.title").value("Late"))
+                .andExpect(jsonPath("$.items[0].company").value("Acme")).andExpect(jsonPath("$.items[0].role").value("Engineer"));
+        mvc.perform(get("/api/dashboard/actions?section=TODAY").with(owner("alice")))
+                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].action.title").value("Now"))
+                .andExpect(jsonPath("$.today").value(today.toString())).andExpect(jsonPath("$.timezone").value("Asia/Kolkata"));
+        mvc.perform(get("/api/dashboard/actions?section=UPCOMING").with(owner("alice")))
+                .andExpect(jsonPath("$.totalElements").value(2)).andExpect(jsonPath("$.items[1].action.title").value("Day seven"));
+        mvc.perform(get("/api/dashboard/actions?section=TODAY").with(owner("bob"))).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get("/api/dashboard/actions?section=TODAY&page=-1").with(owner("alice"))).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/dashboard/actions?section=BAD").with(owner("alice"))).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/dashboard/actions?section=TODAY")).andExpect(status().isUnauthorized());
+    }
+
+    @Test void dashboardPaginatesAndMovesRescheduledActions() throws Exception {
+        var parent = app(); var today = LocalDate.now(ZoneId.of("Asia/Kolkata"));
+        // Fixtures avoid unrelated transaction overhead while exercising real Mongo range pagination.
+        for (int i = 0; i < 21; i++) mongo.insert(new JobAction(null, "alice", parent.id(), "Task " + i,
+                JobAction.Type.OTHER, today, null, "", JobAction.Status.PENDING, null, null, "", Instant.now(), Instant.now(), null));
+        mvc.perform(get("/api/dashboard/actions?section=TODAY").with(owner("alice")))
+                .andExpect(jsonPath("$.items.length()").value(20)).andExpect(jsonPath("$.totalPages").value(2));
+        mvc.perform(get("/api/dashboard/actions?section=TODAY&page=1").with(owner("alice")))
+                .andExpect(jsonPath("$.items.length()").value(1));
+        var action = create(parent.id(), input("Move me", JobAction.Type.FOLLOW_UP, today.minusDays(1), "", null));
+        mvc.perform(patch("/api/actions/" + action.id()).with(owner("alice")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(input("Move me", JobAction.Type.FOLLOW_UP, today.plusDays(1), "", action.version()))))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/dashboard/actions?section=OVERDUE").with(owner("alice"))).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get("/api/dashboard/actions?section=UPCOMING").with(owner("alice")))
+                .andExpect(jsonPath("$.items[0].action.title").value("Move me"));
+    }
+
     @Test void createsPendingActionWithTrustedOwnershipAndDerivedOverdue() throws Exception {
         var app=app();var due=LocalDate.now(ZoneId.of("Asia/Kolkata")).minusDays(1);
         var action=create(app.id(),input("  Follow up  ",JobAction.Type.FOLLOW_UP,due,"",null));

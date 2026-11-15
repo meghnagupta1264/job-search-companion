@@ -42,5 +42,17 @@ public class ActionStore {
                 .skip((long)page * size).limit(size);
         return new Result(mongo.find(query, JobAction.class), total);
     }
+    /** Date ranges are computed by the server in the account timezone, never by the browser. */
+    public Result agenda(String owner, java.time.LocalDate from, java.time.LocalDate until, int page, int size) {
+        prepareIndexes();
+        Criteria criteria = Criteria.where("userId").is(owner).and("status").is(JobAction.Status.PENDING);
+        Criteria dates = criteria.and("dueOn");
+        if (from != null) dates.gte(from);
+        if (until != null) dates.lt(until);
+        long total = mongo.count(Query.query(criteria), JobAction.class);
+        var query = Query.query(criteria).with(Sort.by(Sort.Direction.ASC, "dueOn", "scheduledAt", "_id"))
+                .skip((long) page * size).limit(size);
+        return new Result(mongo.find(query, JobAction.class), total);
+    }
     public record Result(List<JobAction> items, long total) {}
 }

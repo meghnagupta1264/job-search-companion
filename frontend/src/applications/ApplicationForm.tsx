@@ -28,7 +28,7 @@ function ApplicationForm({ initial, reload }: { initial?: JobApplication; reload
       // Refresh list/source caches and make the detail response available immediately.
       client.setQueryData(['application', app.id], app)
       // Form status changes must refresh the same board and history as drag/drop moves.
-      await Promise.all([client.invalidateQueries({ queryKey: ['applications'] }), client.invalidateQueries({ queryKey: ['application-sources'] }), client.invalidateQueries({ queryKey: ['application-board'] }), client.invalidateQueries({ queryKey: ['activities', app.id] }), client.invalidateQueries({ queryKey: ['actions', app.id] })])
+      await Promise.all([client.invalidateQueries({ queryKey: ['dashboard'] }), client.invalidateQueries({ queryKey: ['applications'] }), client.invalidateQueries({ queryKey: ['application-sources'] }), client.invalidateQueries({ queryKey: ['application-board'] }), client.invalidateQueries({ queryKey: ['activities', app.id] }), client.invalidateQueries({ queryKey: ['actions', app.id] })])
       navigate('/applications/' + app.id, { replace: true })
     },
   })
@@ -39,7 +39,8 @@ function ApplicationForm({ initial, reload }: { initial?: JobApplication; reload
   function fieldError(name: string) { return fields[name] ? <div id={name + '-error'} className="text-danger small mt-1">{fields[name]}</div> : null }
   return <div className="form-panel mx-auto">
     <Link to={initial ? '/applications/' + initial.id : '/applications'} className="small">← {initial ? 'Back to application' : 'All applications'}</Link>
-    <h1 className="h2 mt-3">{initial ? 'Edit application' : 'Add application'}</h1><p className="text-secondary">Save an interesting role or record an application. Fields marked * are required.</p>
+    {/* Editorial headings share the reference palette without changing form labels. */}
+    <h1 className="page-title mt-3">{initial ? <>Edit your <em>application</em></> : <>Track a new <em>opportunity</em></>}</h1><p className="text-secondary">Save an interesting role or record an application. Fields marked * are required.</p>
     {save.isError && <div className="alert alert-danger" role="alert">{save.error.message}{conflict && <div className="mt-2"><button className="btn btn-outline-danger btn-sm" onClick={reload}>Reload latest version (discards edits)</button></div>}</div>}
     <form onSubmit={submit} className="card border-0 shadow-sm"><div className="card-body p-4"><fieldset disabled={save.isPending}>
       <div className="row g-3">

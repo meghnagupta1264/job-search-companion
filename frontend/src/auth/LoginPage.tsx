@@ -63,10 +63,12 @@ export function LoginPage() {
   if (setup.isError) return <main className="container py-5"><div className="alert alert-danger" role="alert">{setup.error.message}</div><button className="btn btn-dark" onClick={() => void setup.refetch()}>Try again</button></main>
 
   return (
-    <main className="container py-5">
-      <div className="auth-panel mx-auto">
+    <main className="auth-layout">
+      {/* The entry screen shares the forest/ivory palette with the signed-in workspace. */}
+      <aside className="auth-intro"><p className="auth-brand">Job Search<br />Companion</p><p className="auth-tagline">Your next chapter<br />starts with a <em>little clarity.</em></p><span>Personal tracking system</span></aside>
+      <div className="auth-panel">
         <p className="eyebrow">Job Search Companion</p>
-        <h1 className="display-6 fw-semibold">{isSetup ? 'Make room for your next chapter.' : 'Welcome back.'}</h1>
+        <h1 className="page-title">{isSetup ? 'Make room for your next chapter.' : 'Welcome back.'}</h1>
         <p className="text-secondary mb-4">{isSetup ? 'Create your private account to get started. This app supports one owner.' : 'Sign in to your personal job search workspace.'}</p>
         <div className="card border-0 shadow-sm"><div className="card-body p-4 p-sm-5">
           <h2 className="h4 mb-4">{isSetup ? 'Create your account' : 'Sign in'}</h2>

@@ -45,6 +45,11 @@ public class ApplicationStore {
                 .and("userId").is(userId)), JobApplication.class));
     }
 
+    /** Resolve one dashboard page in a single owner-scoped query instead of one query per card. */
+    public List<JobApplication> findOwnedBatch(List<String> ids, String userId) {
+        return mongo.find(Query.query(Criteria.where("userId").is(userId).and("_id").in(ids)), JobApplication.class);
+    }
+
     public SearchResult search(String userId, String search, ApplicationStatus status, String source,
                                int page, int size, String sort, Sort.Direction direction) {
         prepareIndexes();
